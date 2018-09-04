@@ -31,12 +31,19 @@ pipeline {
                         }
                     }
                     steps {
+                        githubNotify description: 'checkmodules.sh',  context: 'checkmodules.sh', status: 'PENDING'
                         sh '''git submodule update --init --recursive
                               utils/check_modules.sh'''
                     }
                     post {
                         always {
                             archiveArtifacts artifacts: 'pylint.log', allowEmptyArchive: true
+                        }
+                        success {
+                            githubNotify description: 'checkmodules.sh',  context: 'checkmodules.sh', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'checkmodules.sh',  context: 'checkmodules.sh', status: 'FAILURE'
                         }
                     }
                 }
@@ -73,6 +80,14 @@ pipeline {
                         stash name: 'CentOS-build-vars', includes: '.build_vars.*'
                         stash name: 'CentOS-tests', includes: 'build/src/rdb/raft/src/tests_main, build/src/common/tests/btree_direct, build/src/common/tests/btree, src/common/tests/btree.sh, build/src/common/tests/sched, build/src/client/api/tests/eq_tests, src/vos/tests/evt_ctl.sh, build/src/vos/vea/tests/vea_ut, src/rdb/raft_tests/raft_tests.py'
                     }
+                    post {
+                        success {
+                            githubNotify description: 'CentOS 7 Build',  context: 'build/centos7', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'CentOS 7 Build',  context: 'build/centos7', status: 'FAILURE'
+                        }
+                    }
                 }
                 stage('Build on Ubuntu 18.04') {
                     agent {
@@ -100,6 +115,14 @@ pipeline {
                                   fi
                               fi'''
                     }
+                    post {
+                        success {
+                            githubNotify description: 'Ubuntu 18 Build',  context: 'build/ubuntu18', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'Ubuntu 18 Build',  context: 'build/ubuntu18', status: 'FAILURE'
+                        }
+                    }
                 }
             }
         }
@@ -110,6 +133,7 @@ pipeline {
                         label 'cluster_provisioner'
                     }
                     steps {
+                        githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'PENDING'
                         dir('install') {
                             deleteDir()
                         }
@@ -126,6 +150,12 @@ pipeline {
                             archiveArtifacts artifacts: 'Functional quick/**'
                             junit 'Functional quick/*/results.xml'
                         }
+                        success {
+                            githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'FAILURE'
+                        }
                     }
                 }
                 stage('run_test.sh') {
@@ -133,6 +163,7 @@ pipeline {
                         label 'single'
                     }
                     steps {
+                        githubNotify description: 'run_test.sh',  context: 'test/run_test.sh', status: 'PENDING'
                         dir('install') {
                             deleteDir()
                         }
@@ -140,11 +171,19 @@ pipeline {
                         unstash 'CentOS-install'
                         unstash 'CentOS-build-vars'
                         sh '''HOSTPREFIX=wolf-53 bash -x utils/run_test.sh --init
-                              mv /tmp/daos.log daos-run_test.sh.log'''
+                              rm -rf run_test.sh/
+                              mkdir run_test.sh/
+                              mv /tmp/daos.log run_test.sh/'''
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: 'daos-run_test.sh.log'
+                            archiveArtifacts artifacts: 'run_test.sh/**'
+                        }
+                        success {
+                            githubNotify description: 'run_test.sh',  context: 'test/run_test.sh', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'run_test.sh',  context: 'test/run_test.sh', status: 'FAILURE'
                         }
                     }
                 }
@@ -153,18 +192,27 @@ pipeline {
                         label 'cluster_provisioner'
                     }
                     steps {
+                        githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'PENDING'
                         dir('install') {
                             deleteDir()
                         }
                         unstash 'CentOS-install'
-                        sh '''trap 'mv daos{,-DaosTestMulti-All}.log
-                                    [ -f results.xml ] && mv -f results{,-DaosTestMulti-All}.xml' EXIT
+                        sh '''trap 'rm -rf DaosTestMulti-All/
+                                    mkdir DaosTestMulti-All/
+                                    mv daos.log DaosTestMulti-All
+                                    [ -f results.xml ] && mv -f results.xml DaosTestMulti-All' EXIT
                               bash DaosTestMulti.sh || true'''
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: 'daos-DaosTestMulti-All.log, results-DaosTestMulti-All.xml'
-                            junit allowEmptyResults: true, testResults: 'results-DaosTestMulti-All.xml'
+                            archiveArtifacts artifacts: 'DaosTestMulti-All/**'
+                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-All/results.xml'
+                        }
+                        success {
+                            githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'FAILURE'
                         }
                     }
                 }
@@ -173,18 +221,27 @@ pipeline {
                         label 'cluster_provisioner'
                     }
                     steps {
+                        githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'PENDING'
                         dir('install') {
                             deleteDir()
                         }
                         unstash 'CentOS-install'
-                        sh '''trap 'mv daos{,-DaosTestMulti-Degraded}.log
-                                    [ -f results.xml ] && mv -f results{,-DaosTestMulti-Degraded}.xml' EXIT
+                        sh '''trap 'rm -rf DaosTestMulti-Degraded/
+                                    mkdir DaosTestMulti-Degraded/
+                                    mv daos.log DaosTestMulti-Degraded
+                                    [ -f results.xml ] && mv -f results.xml DaosTestMulti-Degraded' EXIT
                               bash DaosTestMulti.sh -d || true'''
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: 'daos-DaosTestMulti-Degraded.log, results-DaosTestMulti-Degraded.xml'
-                            junit allowEmptyResults: true, testResults: 'results-DaosTestMulti-Degraded.xml'
+                            archiveArtifacts artifacts: 'DaosTestMulti-Degraded/**'
+                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-Degraded/results.xml'
+                        }
+                        success {
+                            githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'FAILURE'
                         }
                     }
                 }
@@ -193,18 +250,27 @@ pipeline {
                         label 'cluster_provisioner'
                     }
                     steps {
+                        githubNotify description: 'DaosTestMulti Rebuild',  context: 'test/daostestmulti_rebuild', status: 'PENDING'
                         dir('install') {
                             deleteDir()
                         }
                         unstash 'CentOS-install'
-                        sh '''trap 'mv daos{,-DaosTestMulti-Rebuild}.log
-                                    [ -f results.xml ] && mv -f results{,-DaosTestMulti-Rebuild}.xml' EXIT
+                        sh '''trap 'rm -rf DaosTestMulti-Rebuild/
+                                    mkdir DaosTestMulti-Rebuild/
+                                    mv daos.log DaosTestMulti-Rebuild
+                                    [ -f results.xml ] && mv -f results.xml DaosTestMulti-Rebuild' EXIT
                               bash DaosTestMulti.sh -r || true'''
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: 'daos-DaosTestMulti-Rebuild.log, results-DaosTestMulti-Rebuild.xml'
-                            junit allowEmptyResults: true, testResults: 'results-DaosTestMulti-Rebuild.xml'
+                            archiveArtifacts artifacts: 'DaosTestMulti-Rebuild/**'
+                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-Rebuild/results.xml'
+                        }
+                        success {
+                            githubNotify description: 'DaosTestMulti Rebuild',  context: 'test/daostestmulti_rebuild', status: 'SUCCESS'
+                        }
+                        unstable {
+                            githubNotify description: 'DaosTestMulti Rebuild',  context: 'test/daostestmulti_rebuild', status: 'FAILURE'
                         }
                     }
                 }
