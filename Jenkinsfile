@@ -64,7 +64,7 @@ pipeline {
                         githubNotify description: 'CentOS 7 Build',  context: 'build/centos7', status: 'PENDING'
                         checkout scm
                         sh '''git submodule update --init --recursive
-                              if git show -s --format=%B | grep "^Skip-build: true"
+                              if git show -s --format=%B | grep "^Skip-build: true"; then
                                   exit 0
                               fi
                               scons -c
@@ -105,7 +105,7 @@ pipeline {
                         githubNotify description: 'Ubuntu 18 Build',  context: 'build/ubuntu18', status: 'PENDING'
                         checkout scm
                         sh '''git submodule update --init --recursive
-                              if git show -s --format=%B | grep "^Skip-build: true"
+                              if git show -s --format=%B | grep "^Skip-build: true"; then
                                   exit 0
                               fi
                               scons -c
