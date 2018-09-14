@@ -36,14 +36,17 @@ pipeline {
                               utils/check_modules.sh'''
                     }
                     post {
-                        always {
-                            archiveArtifacts artifacts: 'pylint.log', allowEmptyArchive: true
-                        }
                         success {
                             githubNotify description: 'checkmodules.sh',  context: 'checkmodules.sh', status: 'SUCCESS'
                         }
                         unstable {
                             githubNotify description: 'checkmodules.sh',  context: 'checkmodules.sh', status: 'FAILURE'
+                        }
+                        failure {
+                            githubNotify description: 'checkmodules.sh',  context: 'checkmodules.sh', status: 'ERROR'
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'pylint.log', allowEmptyArchive: true
                         }
                     }
                 }
@@ -90,6 +93,9 @@ pipeline {
                         unstable {
                             githubNotify description: 'CentOS 7 Build',  context: 'build/centos7', status: 'FAILURE'
                         }
+                        failure {
+                            githubNotify description: 'CentOS 7 Build',  context: 'build/centos7', status: 'ERROR'
+                        }
                     }
                 }
                 stage('Build on Ubuntu 18.04') {
@@ -128,6 +134,9 @@ pipeline {
                         unstable {
                             githubNotify description: 'Ubuntu 18 Build',  context: 'build/ubuntu18', status: 'FAILURE'
                         }
+                        failure {
+                            githubNotify description: 'Ubuntu 18 Build',  context: 'build/ubuntu18', status: 'ERROR'
+                        }
                     }
                 }
             }
@@ -158,6 +167,9 @@ pipeline {
                         unstable {
                             githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'FAILURE'
                         }
+                        failure {
+                            githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'ERROR'
+                        }
                         always {
                             archiveArtifacts artifacts: 'Functional quick/**'
                             junit 'Functional quick/*/results.xml'
@@ -182,14 +194,17 @@ pipeline {
                               mv /tmp/daos.log run_test.sh/'''
                     }
                     post {
-                        always {
-                            archiveArtifacts artifacts: 'run_test.sh/**'
-                        }
                         success {
                             githubNotify description: 'run_test.sh',  context: 'test/run_test.sh', status: 'SUCCESS'
                         }
                         unstable {
                             githubNotify description: 'run_test.sh',  context: 'test/run_test.sh', status: 'FAILURE'
+                        }
+                        failure {
+                            githubNotify description: 'run_test.sh',  context: 'test/run_test.sh', status: 'ERROR'
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'run_test.sh/**'
                         }
                     }
                 }
@@ -215,6 +230,9 @@ pipeline {
                         }
                         unstable {
                             githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'FAILURE'
+                        }
+                        failure {
+                            githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'ERROR'
                         }
                         always {
                             archiveArtifacts artifacts: 'DaosTestMulti-All/**'
@@ -245,6 +263,9 @@ pipeline {
                         unstable {
                             githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'FAILURE'
                         }
+                        failure {
+                            githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'ERROR'
+                        }
                         always {
                             archiveArtifacts artifacts: 'DaosTestMulti-Degraded/**'
                             junit allowEmptyResults: false, testResults: 'DaosTestMulti-Degraded/results.xml'
@@ -268,15 +289,18 @@ pipeline {
                               bash DaosTestMulti.sh -r || true'''
                     }
                     post {
-                        always {
-                            archiveArtifacts artifacts: 'DaosTestMulti-Rebuild/**'
-                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-Rebuild/results.xml'
-                        }
                         success {
                             githubNotify description: 'DaosTestMulti Rebuild',  context: 'test/daostestmulti_rebuild', status: 'SUCCESS'
                         }
                         unstable {
                             githubNotify description: 'DaosTestMulti Rebuild',  context: 'test/daostestmulti_rebuild', status: 'FAILURE'
+                        }
+                        failure {
+                            githubNotify description: 'DaosTestMulti Rebuild',  context: 'test/daostestmulti_rebuild', status: 'ERROR'
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'DaosTestMulti-Rebuild/**'
+                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-Rebuild/results.xml'
                         }
                     }
                 }
