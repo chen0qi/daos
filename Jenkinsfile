@@ -64,6 +64,9 @@ pipeline {
                         githubNotify description: 'CentOS 7 Build',  context: 'build/centos7', status: 'PENDING'
                         checkout scm
                         sh '''git submodule update --init --recursive
+                              if git show -s --format=%B | grep "^Skip-build: true"
+                                  exit 0
+                              fi
                               scons -c
                               # scons -c is not perfect so get out the big hammer
                               rm -rf _build.external install build
@@ -102,6 +105,9 @@ pipeline {
                         githubNotify description: 'Ubuntu 18 Build',  context: 'build/ubuntu18', status: 'PENDING'
                         checkout scm
                         sh '''git submodule update --init --recursive
+                              if git show -s --format=%B | grep "^Skip-build: true"
+                                  exit 0
+                              fi
                               scons -c
                               # scons -c is not perfect so get out the big hammer
                               rm -rf _build.external install build
@@ -146,15 +152,15 @@ pipeline {
                               mv src/tests/ftest/avocado/job-results/** "Functional quick"/'''
                     }
                     post {
-                        always {
-                            archiveArtifacts artifacts: 'Functional quick/**'
-                            junit 'Functional quick/*/results.xml'
-                        }
                         success {
                             githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'SUCCESS'
                         }
                         unstable {
                             githubNotify description: 'Functional quick',  context: 'test/functional_quick', status: 'FAILURE'
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'Functional quick/**'
+                            junit 'Functional quick/*/results.xml'
                         }
                     }
                 }
@@ -204,15 +210,15 @@ pipeline {
                               bash DaosTestMulti.sh || true'''
                     }
                     post {
-                        always {
-                            archiveArtifacts artifacts: 'DaosTestMulti-All/**'
-                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-All/results.xml'
-                        }
                         success {
                             githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'SUCCESS'
                         }
                         unstable {
                             githubNotify description: 'DaosTestMulti All',  context: 'test/daostestmulti_all', status: 'FAILURE'
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'DaosTestMulti-All/**'
+                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-All/results.xml'
                         }
                     }
                 }
@@ -233,15 +239,15 @@ pipeline {
                               bash DaosTestMulti.sh -d || true'''
                     }
                     post {
-                        always {
-                            archiveArtifacts artifacts: 'DaosTestMulti-Degraded/**'
-                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-Degraded/results.xml'
-                        }
                         success {
                             githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'SUCCESS'
                         }
                         unstable {
                             githubNotify description: 'DaosTestMulti Degraded',  context: 'test/daostestmulti_degraded', status: 'FAILURE'
+                        }
+                        always {
+                            archiveArtifacts artifacts: 'DaosTestMulti-Degraded/**'
+                            junit allowEmptyResults: false, testResults: 'DaosTestMulti-Degraded/results.xml'
                         }
                     }
                 }
